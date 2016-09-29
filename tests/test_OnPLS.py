@@ -83,7 +83,7 @@ class TestOnPLS(tests.TestCase):
         if np.dot(t.T, That[0]) < 0.0:
             That[0] = -That[0]
 #        print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
-        assert(np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 5e-14)
+        assert(np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 5e-13)
 
         # nPLS model:
         npls = estimators.nPLS(predComp, precomputedA=None, numReps=1,
