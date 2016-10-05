@@ -11,6 +11,8 @@ Copyright (c) 2016, Tommy Löfstedt. All rights reserved.
 @email:   tommy.lofstedt@umu.se
 @license: BSD 3-clause.
 """
+import inspect
+
 try:
     from nose.tools import nottest
 except ImportError:
@@ -128,7 +130,13 @@ def test_all():
         extras += " --with-timer"
 
     # Find package directory.
-    testdir = os.path.dirname(os.path.abspath(__file__))
+    testdir = inspect.currentframe()  # This module.
+    testdir = inspect.getfile(testdir)  # Filename of this module.
+    testdir = os.path.abspath(testdir)  # Absolute path of this module.
+    testdir = os.path.dirname(testdir)  # Directory of this module.
+    if testdir[-1] != "/":
+        testdir = testdir + "/"  # Add "slash" if missing.
+
     # TODO: Is there a better way to do this?
     if len(testdir) == 0:
         directory = "../OnPLS"
@@ -137,15 +145,15 @@ def test_all():
     else:
         directory = testdir + "/../OnPLS"
 
-    exec_string = "nosetests --with-doctest --doctest-tests" + \
-                  "%s --verbosity=3 -w %s" % (extras, directory)
+    exec_string = "nosetests --with-doctest --doctest-tests --verbosity=3" + \
+                  "%s -w %s" % (extras, directory)
 
     # First run doctests:
     print("Running: " + exec_string)
     os.system(exec_string)
 
-    exec_string = "nosetests --with-doctest --doctest-tests " + \
-                  "%s --verbosity=3 -w %s" \
+    exec_string = "nosetests --with-doctest --doctest-tests --verbosity=3" + \
+                  "%s -w %s" \
                   % (extras, testdir)
 
     # Then run unit tests in test directory:
