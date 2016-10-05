@@ -30,7 +30,10 @@ def leastNonZero(A):
 
 def normaliseColumns(A):
 
-    norms = np.linalg.norm(A, axis=0)
+    try:
+        norms = np.linalg.norm(A, axis=0)
+    except TypeError:
+        norms = np.sqrt(np.sum(A**2.0, axis=0))
     # Avoid division by zero: Define 0 / 0 = 0.
     norms[np.abs(norms) < consts.TOLERANCE] = 1.0
     A = A / norms
