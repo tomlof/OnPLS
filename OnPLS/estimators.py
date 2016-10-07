@@ -748,7 +748,7 @@ class OnPLS(BaseEstimator):
     ...     numReps=1, verbose=1)
     >>> _ = onpls.fit([X1, X2, X3])
     """
-    def __init__(self, predComp, orthComp, model,
+    def __init__(self, predComp, orthComp, model=None,
                  precomputedW=None, numReps=1, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
 
