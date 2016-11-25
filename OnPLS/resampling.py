@@ -19,10 +19,30 @@ __all__ = ["cross_validation"]
 
 
 def cross_validation(estimator, X, cv_rounds=7, random_state=None):
+    """Performs k-fold cross-validation for a given estimator and data set.
 
+    Parameters
+    ----------
+    estimator : OnPLS.estimators.BaseEstimator
+        The estimator to use in the cross-validation.
+
+    X : numpy.ndarray or list of numpy.ndarray
+        The data to perform cross-validation over.
+
+    cv_rounds : int
+        The number of cross-validation folds.
+
+    random_state : numpy.random.RandomState, optional
+        A random number generator state to use for random numbers. Used e.g.
+        when generating start vectors. Default is None, do not use a random
+        state.
+    """
     if isinstance(estimator, estimators.BaseUniblock):
         if isinstance(X, np.ndarray):
             X = [X]
+
+    if random_state is None:
+        random_state = np.random.RandomState()
 
     n = len(X)
 
