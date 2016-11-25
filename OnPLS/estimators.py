@@ -27,7 +27,7 @@ try:
 except ValueError:
     import OnPLS.consts as consts  # When run as a program.
 
-__all__ = ["BaseEstimator",
+__all__ = ["BaseEstimator", "BaseUniblock", "BaseTwoblock", "BaseMultiblock",
 
            "PCA", "nPLS", "OnPLS"]
 
@@ -133,7 +133,19 @@ class BaseEstimator(with_metaclass(abc.ABCMeta, object)):
                 warnings.warn(warning)
 
 
-class PCA(BaseEstimator):
+class BaseUniblock(object):
+    pass
+
+
+class BaseTwoblock(object):
+    pass
+
+
+class BaseMultiblock(object):
+    pass
+
+
+class PCA(BaseUniblock, BaseEstimator):
     """A NIPALS implementation of principal components analysis.
 
     Parameters
@@ -358,7 +370,7 @@ class PCA(BaseEstimator):
         return X - np.dot(t, p.T)
 
 
-class nPLS(BaseEstimator):
+class nPLS(BaseMultiblock, BaseEstimator):
     """The nPLS method for multiblock data analysis.
 
     Parameters
@@ -684,7 +696,7 @@ class nPLS(BaseEstimator):
         return A
 
 
-class OnPLS(BaseEstimator):
+class OnPLS(BaseMultiblock, BaseEstimator):
     """The OnPLS method for multiblock data analysis.
 
     Parameters
@@ -1033,7 +1045,7 @@ class OnPLS(BaseEstimator):
             if woi is None:
                 continue
             poi = self.Po[i]
-            ki = self.Wo[0].shape[1]
+            ki = self.Wo[i].shape[1]
             for k in range(ki):
                 woik = woi[:, [k]]
                 poik = poi[:, [k]]
@@ -1075,8 +1087,8 @@ class OnPLS(BaseEstimator):
                         Ti = T[i]
                         Tik = Ti[:, [k]]
                         Tiks.append(Tik)
+                Tiks = np.hstack(Tiks)
                 if len(Tiks) > 0:
-                    Tiks = np.hstack(Tiks)
                     beta = np.dot(np.linalg.pinv(Tiks), Tw[:, [k]])
                     Thatwk = np.dot(Tiks, beta)
                     Xhatw = Xhatw + np.dot(Thatwk, Pw.T)

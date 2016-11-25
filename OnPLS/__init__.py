@@ -13,8 +13,9 @@ Copyright (c) 2016, Tommy Löfstedt. All rights reserved.
 """
 from OnPLS import consts
 from OnPLS import estimators
+from OnPLS import resampling
 from OnPLS import utils
 
 __version__ = "0.0.1"
 
-__all__ = ["consts", "estimators", "utils"]
+__all__ = ["consts", "estimators", "resampling", "utils"]

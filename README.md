@@ -84,4 +84,6 @@ Xhat = onpls.predict([X1, X2, X3])
 
 # Compute prediction score
 score = onpls.score([X1, X2, X3])
+
+cv_scores = OnPLS.resampling.cross_validation(onpls, [X1, X2, X3], cv_rounds=4)
 ```
