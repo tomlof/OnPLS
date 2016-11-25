@@ -36,6 +36,30 @@ def cross_validation(estimator, X, cv_rounds=7, random_state=None):
         A random number generator state to use for random numbers. Used e.g.
         when generating start vectors. Default is None, do not use a random
         state.
+
+    Example
+    -------
+    >>> import numpy as np
+    >>> import OnPLS
+    >>>
+    >>> np.random.seed(42)
+    >>>
+    >>> n, p_1, p_2, p_3 = 4, 3, 4, 5
+    >>> t = np.sort(np.random.randn(n, 1), axis=0)
+    >>> p1 = np.sort(np.random.randn(p_1, 1), axis=0)
+    >>> p2 = np.sort(np.random.randn(p_2, 1), axis=0)
+    >>> p3 = np.sort(np.random.randn(p_3, 1), axis=0)
+    >>> X1 = np.dot(t, p1.T) + 0.1 * np.random.randn(n, p_1)
+    >>> X2 = np.dot(t, p2.T) + 0.1 * np.random.randn(n, p_2)
+    >>> X3 = np.dot(t, p3.T) + 0.1 * np.random.randn(n, p_3)
+    >>>
+    >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    >>> orthComp = [1, 1, 1]
+    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp)
+    >>>
+    >>> OnPLS.resampling.cross_validation(onpls, [X1, X2, X3],
+    ...     cv_rounds=4)  # doctest: +ELLIPSIS
+    [0.5493..., 0.9941..., 0.9904..., 0.9859...]
     """
     if isinstance(estimator, estimators.BaseUniblock):
         if isinstance(X, np.ndarray):
@@ -69,3 +93,8 @@ def cross_validation(estimator, X, cv_rounds=7, random_state=None):
         scores.append(score)
 
     return scores
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
