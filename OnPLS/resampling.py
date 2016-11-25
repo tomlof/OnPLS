@@ -11,11 +11,14 @@ Copyright (c) 2016, Tommy Löfstedt. All rights reserved.
 @email:   tommy.lofstedt@umu.se
 @license: BSD 3-clause.
 """
+import copy
+import itertools
+
 import numpy as np
 
 import OnPLS.estimators as estimators
 
-__all__ = ["cross_validation"]
+__all__ = ["cross_validation", "grid_search"]
 
 
 def cross_validation(estimator, X, cv_rounds=7, random_state=None):
@@ -93,6 +96,112 @@ def cross_validation(estimator, X, cv_rounds=7, random_state=None):
         scores.append(score)
 
     return scores
+
+
+def grid_search(estimator, X, params_grid, random_state=None):
+    """Exhaustive search over a parameter grid for parameters of an estimator.
+
+    Parameters
+    ----------
+    estimator : OnPLS.estimators.BaseEstimator
+        The estimator to use in the cross-validation.
+
+    X : numpy.ndarray or list of numpy.ndarray
+        The data to perform grid search over.
+
+    params_grid : dict or list of dict
+        Dictionary with parameter names (key) and lists (values) of parameter
+        settings to try. Or a list of such dictionaries. The values will be
+        set, one at the time, to the attribute of the estimator with the given
+        name.
+
+    Attributes
+    ----------
+    best_estimator_ : OnPLS.estimators.BaseEstimator
+        The estimator that was deemed the best one (highest score) by the
+        search.
+
+    best_score_ : float
+        The cross-validation score of the best estimator.
+
+    best_params_ : dict
+        A dictionary with the parameter settings that gave the highest score.
+
+    Example
+    -------
+    >>> import numpy as np
+    >>> import OnPLS
+    >>>
+    >>> np.random.seed(42)
+    >>>
+    >>> n, p_1, p_2, p_3 = 4, 3, 4, 5
+    >>> t = np.sort(np.random.randn(n, 1), axis=0)
+    >>> p1 = np.sort(np.random.randn(p_1, 1), axis=0)
+    >>> p2 = np.sort(np.random.randn(p_2, 1), axis=0)
+    >>> p3 = np.sort(np.random.randn(p_3, 1), axis=0)
+    >>> X1 = np.dot(t, p1.T) + 0.1 * np.random.randn(n, p_1)
+    >>> X2 = np.dot(t, p2.T) + 0.1 * np.random.randn(n, p_2)
+    >>> X3 = np.dot(t, p3.T) + 0.1 * np.random.randn(n, p_3)
+    >>> X = [X1, X2, X3]
+    >>>
+    >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    >>> orthComp = [1, 1, 1]
+    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp)
+    >>>
+    >>> params_grid = OnPLS.utils.list_product([0, 0, 0], [3, 3, 3])
+    >>> OnPLS.resampling.grid_search(onpls, X,
+    ...     {"orthComp": params_grid})  # doctest: +ELLIPSIS
+    (<OnPLS.estimators.OnPLS object ...>, 0.8841..., {'orthComp': [2, 2, 1]})
+    """
+    if isinstance(params_grid, dict):
+        params_grid = [params_grid]
+
+    if random_state is None:
+        random_state = np.random.RandomState()
+
+    best_estimator_ = None
+    best_score_ = -np.inf
+    best_params_ = None
+
+    for pg in params_grid:
+        names = pg.keys()
+        values = []
+        for name in names:
+            values.append(pg[name])
+
+        # Store current values from the estimator.
+        old_params = dict()
+        for i in range(len(names)):
+            old_params[name] = getattr(estimator, name)
+
+        for value in itertools.product(*values):
+
+            params = dict()
+            for i in range(len(names)):
+                name = names[i]
+                val = value[i]
+
+                # Set new values
+                setattr(estimator, name, val)
+                params[name] = val
+
+            # Fit model using updated estimator.
+            score = np.mean(cross_validation(estimator, X, cv_rounds=7,
+                                             random_state=random_state))
+
+            # Save if better than previous tries.
+            if score > best_score_:
+                best_estimator_ = copy.deepcopy(estimator)
+                best_score_ = score
+                best_params_ = params
+#                print "Better found!", best_params_, best_score_
+
+        # Set the values back to what they were in the estimator
+        for i in range(len(names)):
+            setattr(estimator, name, old_params[name])
+        estimator.reset()  # The estimator is no longer valid.
+
+    return best_estimator_, best_score_, best_params_
 
 
 if __name__ == "__main__":

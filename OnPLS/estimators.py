@@ -928,7 +928,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                               "non-significant, the number of iterations "
                               "was: %d (maxiter=%d), error is: %.3g "
                               "(noiselevel=%.3g)."
-                              % (comp, iter, consts.MAX_ITER, maxerr,
+                              % (comp, its, consts.MAX_ITER, maxerr,
                                  consts.TOLERANCE))
                     okPred = False
 
