@@ -164,7 +164,7 @@ def grid_search(estimator, X, params_grid, random_state=None):
     best_params_ = None
 
     for pg in params_grid:
-        names = pg.keys()
+        names = list(pg.keys())
         values = []
         for name in names:
             values.append(pg[name])
