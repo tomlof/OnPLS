@@ -1087,8 +1087,9 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                         Ti = T[i]
                         Tik = Ti[:, [k]]
                         Tiks.append(Tik)
+                len_Tiks = len(Tiks)
                 Tiks = np.hstack(Tiks)
-                if len(Tiks) > 0:
+                if len_Tiks > 0:
                     beta = np.dot(np.linalg.pinv(Tiks), Tw[:, [k]])
                     Thatwk = np.dot(Tiks, beta)
                     Xhatw = Xhatw + np.dot(Thatwk, Pw.T)
