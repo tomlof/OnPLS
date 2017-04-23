@@ -58,7 +58,7 @@ def cross_validation(estimator, X, cv_rounds=7, random_state=None):
     >>>
     >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
     >>> orthComp = [1, 1, 1]
-    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp)
+    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp, verbose=0)
     >>>
     >>> OnPLS.resampling.cross_validation(onpls, [X1, X2, X3],
     ...     cv_rounds=4)  # doctest: +ELLIPSIS
@@ -146,7 +146,7 @@ def grid_search(estimator, X, params_grid, random_state=None):
     >>>
     >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
     >>> orthComp = [1, 1, 1]
-    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp)
+    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp, verbose=0)
     >>>
     >>> params_grid = OnPLS.utils.list_product([0, 0, 0], [3, 3, 3])
     >>> OnPLS.resampling.grid_search(onpls, X,
@@ -157,7 +157,7 @@ def grid_search(estimator, X, params_grid, random_state=None):
     >>>
     >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
     >>> orthComp = [1, 1, 1]
-    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp)
+    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp, verbose=0)
     >>>
     >>> params_grid_pred_ = OnPLS.utils.list_product([[0, 0, 0], [0, 0, 0], [0, 0, 0]],
     ...                                              [[1, 2, 2], [2, 1, 2], [2, 2, 1]])

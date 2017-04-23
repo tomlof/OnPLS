@@ -594,7 +594,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
                     Tiks = np.hstack(Tiks)
                     beta = np.dot(np.linalg.pinv(Tiks), Tw[:, [k]])
                     Thatwk = np.dot(Tiks, beta)
-                    Xhatw = Xhatw + np.dot(Thatwk, Pw.T)
+                    Xhatw = Xhatw + np.dot(Thatwk, Pw[:, [k]].T)
 
                     if return_scores:
                         Thatw.append(Thatwk)
@@ -897,6 +897,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
         for comp in range(numGlobalPredComp):
             self.output("Calculating component %d ..." % (comp + 1,))
 
+            # Select the best of self.numReps models
             fMax = -np.inf
             for i in range(self.numReps):
                 # Find filtered nPLS component:
@@ -916,43 +917,53 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                     Tx = _Tx
                     Px = _Px
 
+            # Obtain "convergence error" (difference between two last its)
             if len(func_val) > 1:
                 maxerr = func_val[-1] - func_val[-2]
             else:
                 maxerr = 0.0
 
+            # Compute this component for each block
             f = 0.0
             for i in range(n):
+
+                # Too many iterations, or not converged?
                 if its >= consts.MAX_ITER or maxerr >= consts.TOLERANCE:
+                    okPred = False
+
                     self.warn("Component %d may not be correct or is "
                               "non-significant, the number of iterations "
                               "was: %d (maxiter=%d), error is: %.3g "
                               "(noiselevel=%.3g)."
                               % (comp, its, consts.MAX_ITER, maxerr,
                                  consts.TOLERANCE))
-                    okPred = False
 
                 # Can also update with W but that gives non-orthogonal scores!
                 # TODO: Option?
                 temp = np.dot(Tx[i], Px[i].T)
+
+                # Compute SS of this component for this block. Large enough?
                 ssTemp = utils.sumOfSquares(temp)
                 if ssTemp / ssX[i] < consts.LIMIT_R2:
                     okPred = False
-                    for j in range(i - 1):
-                        # Remove already saved results
-                        try:
-                            np.delete(W[j], comp, axis=1)
-                        except:
-                            pass
-                        try:
-                            np.delete(T[j], comp, axis=1)
-                        except:
-                            pass
-                        try:
-                            np.delete(P[j], comp, axis=1)
-                        except:
-                            pass
+
                     if comp >= 1:
+
+                        # Remove already saved results
+                        for j in range(i):
+                            try:
+                                W[j] = W[j][:, :comp]
+                            except:
+                                pass
+                            try:
+                                T[j] = T[j][:, :comp]
+                            except:
+                                pass
+                            try:
+                                P[j] = P[j][:, :comp]
+                            except:
+                                pass
+
                         self.warn("Component is not significant! Contribution "
                                   "of component %d in matrix %d is "
                                   "%.2f %% < 1 %%. Not included!"
@@ -986,12 +997,14 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                     if self.predComp[i][j] > 0:
                         f = f + np.dot(Tx[i].T, Tx[j])
 
-            if comp > 1 and (not okPred):
+            # If we have at least one component already, we can stop here
+            if comp > 0 and (not okPred):
                 break
 
             ftot = ftot + f
             self.output("DONE! f = %.8f" % (f,))
 
+        # Save model
         self.Wo = Wo
         self.To = To
         self.Po = Po
@@ -1087,12 +1100,11 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                         Ti = T[i]
                         Tik = Ti[:, [k]]
                         Tiks.append(Tik)
-                len_Tiks = len(Tiks)
-                Tiks = np.hstack(Tiks)
-                if len_Tiks > 0:
+                if len(Tiks) > 0:
+                    Tiks = np.hstack(Tiks)
                     beta = np.dot(np.linalg.pinv(Tiks), Tw[:, [k]])
                     Thatwk = np.dot(Tiks, beta)
-                    Xhatw = Xhatw + np.dot(Thatwk, Pw.T)
+                    Xhatw = Xhatw + np.dot(Thatwk, Pw[:, [k]].T)
 
                     if return_scores:
                         Thatw.append(Thatwk)
