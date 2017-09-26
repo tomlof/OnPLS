@@ -20,15 +20,14 @@ import numpy as np
 
 try:
     from . import utils  # When imported as a package.
-except ValueError:
+except (ValueError, ImportError):
     import OnPLS.utils as utils  # When run as a program.
 try:
     from . import consts  # When imported as a package.
-except ValueError:
+except (ValueError, ImportError):
     import OnPLS.consts as consts  # When run as a program.
 
 __all__ = ["BaseEstimator", "BaseUniblock", "BaseTwoblock", "BaseMultiblock",
-
            "PCA", "nPLS", "OnPLS"]
 
 
@@ -502,7 +501,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
             W[i] = Z[:, index:index + X[i].shape[1]].T
             T[i] = np.dot(X[i], W[i])
             P[i] = np.dot(X[i].T, T[i])
-            toto = np.dot(T[i].T, T[i])
+            toto = np.asscalar(np.dot(T[i].T, T[i]))
             if toto > consts.TOLERANCE:
                 P[i] = P[i] / toto
             else:

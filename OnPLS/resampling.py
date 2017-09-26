@@ -33,7 +33,8 @@ def cross_validation(estimator, X, cv_rounds=7, random_state=None):
         The data to perform cross-validation over.
 
     cv_rounds : int
-        The number of cross-validation folds.
+        The number of cross-validation folds. Will be set to N, the number of
+        rows of the blocks in X, if ``cv_rounds > N``.
 
     random_state : numpy.random.RandomState, optional
         A random number generator state to use for random numbers. Used e.g.
