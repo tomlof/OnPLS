@@ -145,20 +145,20 @@ def grid_search(estimator, X, params_grid, random_state=None):
     >>> X3 = np.dot(t, p3.T) + 0.1 * np.random.randn(n, p_3)
     >>> X = [X1, X2, X3]
     >>>
-    >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
-    >>> orthComp = [1, 1, 1]
-    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp, verbose=0)
+    >>> pred_comp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    >>> orth_comp = [1, 1, 1]
+    >>> onpls = OnPLS.estimators.OnPLS(pred_comp, orth_comp, verbose=0)
     >>>
     >>> params_grid = OnPLS.utils.list_product([0, 0, 0], [3, 3, 3])
     >>> OnPLS.resampling.grid_search(onpls, X,
-    ...     {"orthComp": params_grid})  # doctest: +ELLIPSIS
-    (<OnPLS.estimators.OnPLS ...>, 0.8841..., {'orthComp': [2, 2, 1]})
+    ...     {"orth_comp": params_grid})  # doctest: +ELLIPSIS
+    (<OnPLS.estimators.OnPLS ...>, 0.8841..., {'orth_comp': [2, 2, 1]})
     >>>
     >>> np.random.seed(42)
     >>>
-    >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
-    >>> orthComp = [1, 1, 1]
-    >>> onpls = OnPLS.estimators.OnPLS(predComp, orthComp, verbose=0)
+    >>> pred_comp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    >>> orth_comp = [1, 1, 1]
+    >>> onpls = OnPLS.estimators.OnPLS(pred_comp, orth_comp, verbose=0)
     >>>
     >>> params_grid_pred_ = OnPLS.utils.list_product([[0, 0, 0], [0, 0, 0], [0, 0, 0]],
     ...                                              [[1, 2, 2], [2, 1, 2], [2, 2, 1]])
@@ -185,16 +185,16 @@ def grid_search(estimator, X, params_grid, random_state=None):
     >>> params_grid_orth = OnPLS.utils.list_product([0, 0, 0], [3, 3, 3])
     >>>
     >>> res = OnPLS.resampling.grid_search(onpls, X,
-    ...     {"orthComp": params_grid_orth,
-    ...      "predComp": params_grid_pred})
+    ...     {"orth_comp": params_grid_orth,
+    ...      "pred_comp": params_grid_pred})
     >>> res[0]  # doctest: +ELLIPSIS
     <OnPLS.estimators.OnPLS ...>
     >>> res[1]  # doctest: +ELLIPSIS
     0.9027...
-    >>> res[2]["orthComp"]
+    >>> res[2]["orth_comp"]
     [2, 2, 1]
-    >>> res[2]["predComp"]
-    [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+    >>> res[2]["pred_comp"]
+    [[0, 1, 0], [1, 0, 1], [1, 0, 0]]
     """
     if isinstance(params_grid, dict):
         params_grid = [params_grid]

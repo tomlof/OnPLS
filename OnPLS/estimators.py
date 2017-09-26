@@ -374,10 +374,13 @@ class nPLS(BaseMultiblock, BaseEstimator):
 
     Parameters
     ----------
-    predComp : list of lists of ints
+    pred_comp : list of lists of ints
         The number of joint components between all pairs of blocks.
 
-    precomputedA : ndarray
+    K : int, optional
+        The number of components. Default is 1, compute a single component.
+
+    precomputed_A : ndarray
         A precomputed block covariance matrix.
 
     numReps : int, optional
@@ -405,18 +408,19 @@ class nPLS(BaseMultiblock, BaseEstimator):
     Examples
     --------
     >>> import numpy as np
-    >>> import estimators
+    >>> import OnPLS.estimators as estimators
     >>> np.random.seed(42)
+    >>> # TODO: Add here!
     """
-    def __init__(self, predComp, precomputedA=None, numReps=1,
+    def __init__(self, pred_comp, K=1, precomputed_A=None, numReps=1,
                  randomState=None, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
 
-        super(nPLS, self).__init__(verbose=verbose,
-                                   eps=eps, max_iter=max_iter)
+        super(nPLS, self).__init__(verbose=verbose, eps=eps, max_iter=max_iter)
 
-        self.predComp = predComp
-        self.precomputedA = precomputedA
+        self.K = max(1, int(K))
+        self.pred_comp = pred_comp
+        self.precomputed_A = precomputed_A
         self.numReps = max(1, int(numReps))
         self.randomState = randomState
 
@@ -430,62 +434,78 @@ class nPLS(BaseMultiblock, BaseEstimator):
         pass
 
     def f(self, X, W):
-        value = np.trace(np.dot(W.T, np.dot(X, W)))
+        """Function value.
+        """
+        X_ = list(X)
+        n = len(X_)
+        K = W[0].shape[1]  # The number of components
+        f = 0.0
+        for k in range(K):
+            for i in range(n):
+                wik = W[i][:, [k]]
+                for j in range(n):
+                    if self.pred_comp[i][j] > 0:
+                        wjk = W[j][:, [k]]
 
-        return value
+                        ti = np.dot(X_[i], wik)
+                        tj = np.dot(X_[j], wjk)
+    
+                        f += np.asscalar(np.dot(ti.T, tj))
 
-    def fit(self, X):
-        """Fit the estimator to the data.
+            # Deflate for next component
+            if k < K - 1:  # Do not deflate for last component
+                for i in range(n):
+                    wi = W[i][:, k]
+                    ti = np.dot(X_[i], wi)
+                    titi = np.asscalar(np.dot(ti.T, ti))
+                    if titi > consts.TOLERANCE:
+                        pi = np.dot(X_[i].T, ti) / titi
+    
+                        X_[i] = X_[i] - np.dot(ti, pi.T)  # Deflate
+                    # else:
+                    #     pi = np.zeros_like(wi)
+
+        return f
+
+    def _fit(self, X):
+        """Fit a one-component model to the data.
 
         Parameters
         ----------
-        X : list of ndarrays (n-by-pi)
+        X : list of ndarrays, shape (n-by-pi)
             The blocks of data. The numpy arrays in X are assumed to have been
             preprocessed appropriately.
         """
         n = len(X)
 
         # Initialise start vectors
-        Z = None
+        w = [0] * n
         for i in range(n):
             if self.randomState is None:
-                temp = np.ones((1, X[i].shape[1]))
+                w[i] = np.ones((X[i].shape[1], 1))
             else:
-                temp = self.randomState.rand(1, X[i].shape[1])
-            temp = temp / np.linalg.norm(temp)
+                w[i] = self.randomState.rand(X[i].shape[1], 1)
+            w[i] = w[i] / np.linalg.norm(w[i])
 
-            if Z is None:
-                Z = temp
-            else:
-                Z = np.hstack((Z, temp))
-
-        # Build block covariance matrix, if not passed to the function
-        if self.precomputedA is None:
-            A = self.generateA(X, True)  # Make symmetric and positive-definite
-        else:
-            A = self.precomputedA
-
-        # Find model
-        func_val = []
+        # Find model (Gauss-Siedel iteration)
+        func_val = [self.f(X, w)]
         for it in range(self.max_iter):
-            T = Z
-            Z = None
-            index = 0
             for i in range(n):
-                temp = np.dot(A[index:index + X[i].shape[1], :], T.T)
-                temp = utils.normaliseColumns(temp)
-                if Z is None:
-                    Z = temp.T
-                else:
-                    Z = np.hstack((Z, temp.T))
-                index = index + X[i].shape[1]
+                wi = 0.0
+                for j in range(n):
+                    if self.pred_comp[i][j] > 0:
+                        wi += np.dot(X[i].T, np.dot(X[j], w[j]))
+                norm_wi = np.linalg.norm(wi)
+                if norm_wi > consts.TOLERANCE:
+                    wi /= norm_wi
+                w[i] = wi
 
-            func_val.append(self.f(A, Z.T))
+            func_val.append(self.f(X, w))
 
             if it >= 1:
-                err = func_val[it] - func_val[it - 1]
+                err = func_val[-1] - func_val[-2]
             else:
-                err = func_val[it]
+                err = func_val[-1]
 
             self.num_iter = it + 1
 
@@ -493,17 +513,14 @@ class nPLS(BaseMultiblock, BaseEstimator):
                 break
 
         # Find all model vectors
-        index = 0
-        W = [0] * n
-        T = [0] * n
-        P = [0] * n
+        t = [0] * n
+        p = [0] * n
         for i in range(n):
-            W[i] = Z[:, index:index + X[i].shape[1]].T
-            T[i] = np.dot(X[i], W[i])
-            P[i] = np.dot(X[i].T, T[i])
-            toto = np.asscalar(np.dot(T[i].T, T[i]))
-            if toto > consts.TOLERANCE:
-                P[i] = P[i] / toto
+            t[i] = np.dot(X[i], w[i])
+            p[i] = np.dot(X[i].T, t[i])
+            titi = np.linalg.norm(t[i])**2.0
+            if titi > consts.TOLERANCE:
+                p[i] = p[i] / titi
             else:
                 self.warn("Too small joint component for matrix %d! "
                           "Trying to continue!" % (i,))
@@ -514,9 +531,40 @@ class nPLS(BaseMultiblock, BaseEstimator):
 #            P{i} = P{i} / normp;
 #            T{i} = T{i} * normp;
 
-            index = index + X[i].shape[1]
+        return w, t, p, func_val
 
-        self.func_val = func_val
+    def fit(self, X):
+        """Fit the model to the data.
+
+        Parameters
+        ----------
+        X : list of ndarrays, shape (n-by-pi)
+            The blocks of data. The numpy arrays in X are assumed to have been
+            preprocessed appropriately.
+        """
+        X_ = list(X)
+        n = len(X_)
+
+        W = [np.zeros((X_[i].shape[1], self.K)) for i in range(n)]
+        T = [np.zeros((X_[i].shape[0], self.K)) for i in range(n)]
+        P = [np.zeros((X_[i].shape[1], self.K)) for i in range(n)]
+
+        # Find model
+        func_vals = []
+        for k in range(self.K):
+            w, t, p, func_val = self._fit(X_)
+
+            # Deflate for next component, but do not deflate for last component
+            for i in range(n):
+                W[i][:, k] = w[i].ravel()
+                T[i][:, k] = t[i].ravel()
+                P[i][:, k] = p[i].ravel()
+
+                X_[i] = X_[i] - np.dot(t[i], p[i].T)  # Deflate
+
+            func_vals.append(func_val)
+
+        self.func_val = func_vals
         self.W = W
         self.T = T
         self.P = P
@@ -536,7 +584,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
         which : list of int, optional
             The indices of the blocks to predict. Default is [], an empty list,
             which means that all blocks are predicted by the connected blocks
-            (defined in self.predComp).
+            (defined in self.pred_comp).
 
         return_scores : bool
             Whether or not to also return the predicted score matrices. Default
@@ -585,7 +633,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
             for k in range(numComp):
                 Tiks = []
                 for i in range(n):
-                    if self.predComp[i][j] > 0:  # If i predicts j
+                    if self.pred_comp[i][j] > 0:  # If i predicts j
                         Ti = T[i]
                         Tik = Ti[:, [k]]
                         Tiks.append(Tik)
@@ -608,8 +656,8 @@ class nPLS(BaseMultiblock, BaseEstimator):
             return Xhat
 
     def score(self, X):
-        """Computes the sum of predicted R², i.e. the sum of how well each
-        block is predicted by their connected blocks.
+        """Computes the sum of predicted R², i.e. the sum of a measure of how
+        well each block is predicted by their connected blocks.
 
         From BaseEstimator.
 
@@ -649,7 +697,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
                 "T": self.T,
                 "P": self.P}
 
-    def generateA(self, X, psd=True):
+    def generate_A(self, X, psd=True):
         """Generates the block covariance matrix A.
 
         Parameters
@@ -668,7 +716,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
         for i in range(n):
             R = None
             for j in range(n):
-                if self.predComp[i][j] == 0:
+                if self.pred_comp[i][j] == 0:
                     if R is None:
                         R = np.zeros((X[i].shape[1], X[j].shape[1]))
                     else:
@@ -700,10 +748,10 @@ class OnPLS(BaseMultiblock, BaseEstimator):
 
     Parameters
     ----------
-    predComp : list of lists of ints
+    pred_comp : list of lists of ints
         The number of joint components between all pairs of blocks.
 
-    orthComp : list of int
+    orth_comp : list of int
         The number of non-joint components for each block.
 
     model : OnPLS.ModelType
@@ -751,23 +799,23 @@ class OnPLS(BaseMultiblock, BaseEstimator):
     >>> X1 = np.dot(t, p1.T) + 0.1 * np.random.randn(n, p_1)
     >>> X2 = np.dot(t, p2.T) + 0.1 * np.random.randn(n, p_2)
     >>> X3 = np.dot(t, p3.T) + 0.1 * np.random.randn(n, p_3)
-    >>> predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
-    >>> orthComp = [1, 1, 1]
+    >>> pred_comp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
+    >>> orth_comp = [1, 1, 1]
     >>> model = None
     >>> precomputedW = None
-    >>> onpls = estimators.OnPLS(predComp, orthComp, model, precomputedW,
+    >>> onpls = estimators.OnPLS(pred_comp, orth_comp, model, precomputedW,
     ...     numReps=1, verbose=1)
     >>> _ = onpls.fit([X1, X2, X3])
     """
-    def __init__(self, predComp, orthComp, model=None,
+    def __init__(self, pred_comp, orth_comp, model=None,
                  precomputedW=None, numReps=1, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
 
         super(OnPLS, self).__init__(verbose=verbose,
                                     eps=eps, max_iter=max_iter)
 
-        self.predComp = predComp
-        self.orthComp = orthComp
+        self.pred_comp = pred_comp
+        self.orth_comp = orth_comp
         self.model = model
         self.precomputedW = precomputedW
         self.numReps = max(1, int(numReps))
@@ -819,7 +867,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
             if gjWi.shape[1] < 1:
                 continue
 
-            for c in range(self.orthComp[i]):
+            for c in range(self.orth_comp[i]):
                 Ti = np.dot(Xi, gjWi)  # Recall that Wi'*Wi = I
                 # Any row vector in E represents a possible wortho vector
                 Ei = Xi - np.dot(Ti, gjWi.T)
@@ -892,7 +940,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
         T = [None] * n
         P = [None] * n
         ftot = 0.0
-        numGlobalPredComp = utils.leastNonZero(self.predComp)
+        numGlobalPredComp = utils.leastNonZero(self.pred_comp)
         for comp in range(numGlobalPredComp):
             self.output("Calculating component %d ..." % (comp + 1,))
 
@@ -901,7 +949,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
             for i in range(self.numReps):
                 # Find filtered nPLS component:
                 # TODO: Precompute A!
-                npls = nPLS(self.predComp)
+                npls = nPLS(self.pred_comp)
                 npls.fit(X)
                 _Wx = npls.W
                 _Tx = npls.T
@@ -909,7 +957,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                 its = npls.num_iter
                 func_val = npls.func_val
                 # TODO: Use nPLS.f(...) instead:
-                s = np.sum(utils.sumOfCovariances(_Tx, self.predComp))
+                s = np.sum(utils.sumOfCovariances(_Tx, self.pred_comp))
                 if i == 0 or s > fMax:
                     fMax = s
                     Wx = _Wx
@@ -993,7 +1041,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
 
                 # TODO: Create method for objective function
                 for j in range(n):
-                    if self.predComp[i][j] > 0:
+                    if self.pred_comp[i][j] > 0:
                         f = f + np.dot(Tx[i].T, Tx[j])
 
             # If we have at least one component already, we can stop here
@@ -1030,7 +1078,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
         which : list of int, optional
             The indices of the blocks to predict. Default is [], an empty list,
             which means that all blocks are predicted by the connected blocks
-            (defined in self.predComp).
+            (defined in self.pred_comp).
 
         return_scores : bool
             Whether or not to also return the predicted score matrices. Default
@@ -1095,7 +1143,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
             for k in range(numComp):
                 Tiks = []
                 for i in range(n):
-                    if self.predComp[i][w] > 0:  # If i predicts w
+                    if self.pred_comp[i][w] > 0:  # If i predicts w
                         Ti = T[i]
                         Tik = Ti[:, [k]]
                         Tiks.append(Tik)
@@ -1170,8 +1218,8 @@ class OnPLS(BaseMultiblock, BaseEstimator):
         for i in range(n):
             W = None
             for j in range(n):
-                if self.predComp[i][j] > 0:
-                    pca = PCA(self.predComp[i][j],
+                if self.pred_comp[i][j] > 0:
+                    pca = PCA(self.pred_comp[i][j],
                               eps=self.eps, max_iter=self.max_iter)
                     # TODO: We don't actually need to compute the inner product
                     XjtXi = np.dot(X[j].T, X[i])
@@ -1189,7 +1237,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
             rank_thresh = np.max(S) * np.max(S.shape) * np.finfo(W.dtype).eps
             rank_W = np.sum(S > rank_thresh)
 
-            comps = utils.leastNonZero(self.predComp[i])
+            comps = utils.leastNonZero(self.pred_comp[i])
             comps = min(rank_W, max(1, comps))
 
             W = W[:, 0:comps]

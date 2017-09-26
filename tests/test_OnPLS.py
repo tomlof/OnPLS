@@ -86,7 +86,7 @@ class TestOnPLS(tests.TestCase):
         assert(np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 5e-13)
 
         # nPLS model:
-        npls = estimators.nPLS(predComp, precomputedA=None, numReps=1,
+        npls = estimators.nPLS(predComp, precomputed_A=None, numReps=1,
                                randomState=None, verbose=verbose)
         npls.fit([X1, X2, X3])
 
@@ -165,13 +165,13 @@ class TestOnPLS(tests.TestCase):
 #        Xte2 = np.dot(t, p2.T)
 #        Xte3 = np.dot(t, p3.T)
 
-        predComp = [[0, 2, 2], [2, 0, 2], [2, 2, 0]]
-        precomputedW = None
+        pred_comp = [[0, 2, 2], [2, 0, 2], [2, 2, 0]]
+        precomputed_W = None
 
         # OnPLS model:
-        orthComp = [1, 1, 1]
+        orth_comp = [1, 1, 1]
         model = None
-        onpls = estimators.OnPLS(predComp, orthComp, model, precomputedW,
+        onpls = estimators.OnPLS(pred_comp, orth_comp, model, precomputed_W,
                                  numReps=1, verbose=verbose)
         onpls.fit([X1, X2, X3])
 
@@ -188,7 +188,7 @@ class TestOnPLS(tests.TestCase):
 #        assert(np.linalg.norm(Xhat[0] - np.dot(t1, p13.T)) < 5e-13)
 
         # nPLS model:
-        npls = estimators.nPLS(predComp, precomputedA=None, numReps=1,
+        npls = estimators.nPLS(pred_comp, K=2, precomputed_A=None, numReps=1,
                                randomState=None, verbose=verbose)
         npls.fit([X1, X2, X3])
 
@@ -196,13 +196,15 @@ class TestOnPLS(tests.TestCase):
 #        Xhat, That = npls.predict([Xte1, Xte2, Xte3], [2],
 #                                  return_scores=True)
 
-        if np.dot(t1.T, That[0]) < 0.0:
-            That[0] = -That[0]
+        if np.asscalar(np.dot(t1.T, That[0][:, [0]])) < 0.0:
+            That[0][:, 0] = -That[0][:, 0]
+        if np.asscalar(np.dot(t1.T, That[0][:, [1]])) < 0.0:
+            That[0][:, 1] = -That[0][:, 1]
 #        print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
         assert(np.linalg.norm(Xhat[0] - np.dot(t1, p13.T)) < 3.3)
         npls_score = npls.score([X1, X2, X3])
-#        print abs(npls_score - 0.37736)
-        assert(abs(npls_score - 0.394976) < 5e-6)
+#        print(abs(npls_score - 0.534009))
+        assert(abs(npls_score - 0.534009) < 5e-7)
 
         assert(onpls_score > npls_score)
 
