@@ -6,7 +6,7 @@ to be applied to data.
 
 Created on Fri Jul 22 21:25:34 2016
 
-Copyright (c) 2016, Tommy Löfstedt. All rights reserved.
+Copyright (c) 2016-2024, Tommy Löfstedt. All rights reserved.
 
 @author:  Tommy Löfstedt
 @email:   tommy.lofstedt@umu.se
@@ -49,6 +49,7 @@ class BaseEstimator(with_metaclass(abc.ABCMeta, object)):
         Must be positive. The maximum number of iterations to use in the
         algorithm.
     """
+
     def __init__(self, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
 
@@ -205,6 +206,7 @@ class PCA(BaseUniblock, BaseEstimator):
     >>> V[[2], :] = -V[[2], :] if V[2, 0] < 0.0 else V[[2], :]
     >>> assert(np.linalg.norm(pca.P - V[[0, 1, 2], :].T) < 5e-14)
     """
+
     def __init__(self, K, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
 
@@ -412,6 +414,7 @@ class nPLS(BaseMultiblock, BaseEstimator):
     >>> np.random.seed(42)
     >>> # TODO: Add here!
     """
+
     def __init__(self, pred_comp, K=1, precomputed_A=None, numReps=1,
                  randomState=None, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
@@ -449,18 +452,18 @@ class nPLS(BaseMultiblock, BaseEstimator):
 
                         ti = np.dot(X_[i], wik)
                         tj = np.dot(X_[j], wjk)
-    
-                        f += np.asscalar(np.dot(ti.T, tj))
+
+                        f += np.array(np.dot(ti.T, tj)).item()
 
             # Deflate for next component
             if k < K - 1:  # Do not deflate for last component
                 for i in range(n):
                     wi = W[i][:, k]
                     ti = np.dot(X_[i], wi)
-                    titi = np.asscalar(np.dot(ti.T, ti))
+                    titi = np.array(np.dot(ti.T, ti)).item()
                     if titi > consts.TOLERANCE:
                         pi = np.dot(X_[i].T, ti) / titi
-    
+
                         X_[i] = X_[i] - np.dot(ti, pi.T)  # Deflate
                     # else:
                     #     pi = np.zeros_like(wi)
@@ -527,9 +530,9 @@ class nPLS(BaseMultiblock, BaseEstimator):
 
             # Normalise P? It matters whether we update with W or with P!
             # TODO: Option?
-#            normp = norm(P{i});
-#            P{i} = P{i} / normp;
-#            T{i} = T{i} * normp;
+            # normp = norm(P{i});
+            # P{i} = P{i} / normp;
+            # T{i} = T{i} * normp;
 
         return w, t, p, func_val
 
@@ -807,6 +810,7 @@ class OnPLS(BaseMultiblock, BaseEstimator):
     ...     numReps=1, verbose=1)
     >>> _ = onpls.fit([X1, X2, X3])
     """
+
     def __init__(self, pred_comp, orth_comp, model=None,
                  precomputedW=None, numReps=1, verbose=2,
                  eps=consts.TOLERANCE, max_iter=consts.MAX_ITER):
@@ -893,9 +897,9 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                     break
 
                 # It has been discussed whether or not to normalise portho
-#                 normpo = np.linalg.norm(portho)
-#                 tortho = tortho * normpo
-#                 portho = portho / normpo
+                # normpo = np.linalg.norm(portho)
+                # tortho = tortho * normpo
+                # portho = portho / normpo
 
                 if utils.sumOfSquares(
                         np.dot(tortho, portho.T)) / ssX[i] < consts.LIMIT_R2:
@@ -1000,15 +1004,15 @@ class OnPLS(BaseMultiblock, BaseEstimator):
                         for j in range(i):
                             try:
                                 W[j] = W[j][:, :comp]
-                            except:
+                            except Exception:
                                 pass
                             try:
                                 T[j] = T[j][:, :comp]
-                            except:
+                            except Exception:
                                 pass
                             try:
                                 P[j] = P[j][:, :comp]
-                            except:
+                            except Exception:
                                 pass
 
                         self.warn("Component is not significant! Contribution "

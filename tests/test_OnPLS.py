@@ -2,7 +2,7 @@
 """
 Created on Mon Sep 26 23:07:26 2016
 
-Copyright (c) 2016, Tommy Löfstedt. All rights reserved.
+Copyright (c) 2016-2024, Tommy Löfstedt. All rights reserved.
 
 @author:  Tommy Löfstedt
 @email:   tommy.lofstedt@umu.se
@@ -43,12 +43,12 @@ class TestOnPLS(tests.TestCase):
                   - utils.project(to3, to1) \
                   - utils.project(to3, to2)
         to3 = to3 / np.linalg.norm(to3)
-        assert(np.dot(t.T, to1) < 5e-15)
-        assert(np.dot(t.T, to2) < 5e-15)
-        assert(np.dot(t.T, to3) < 5e-15)
-        assert(np.dot(to1.T, to2) < 5e-15)
-        assert(np.dot(to1.T, to3) < 5e-15)
-        assert(np.dot(to2.T, to3) < 5e-15)
+        assert (np.dot(t.T, to1) < 5e-15)
+        assert (np.dot(t.T, to2) < 5e-15)
+        assert (np.dot(t.T, to3) < 5e-15)
+        assert (np.dot(to1.T, to2) < 5e-15)
+        assert (np.dot(to1.T, to3) < 5e-15)
+        assert (np.dot(to2.T, to3) < 5e-15)
         p1 = np.sort(np.random.randn(p_1, 1), axis=0)
         p2 = np.sort(np.random.randn(p_2, 1), axis=0)
         p3 = np.sort(np.random.randn(p_3, 1), axis=0)
@@ -59,9 +59,9 @@ class TestOnPLS(tests.TestCase):
         X1 = np.dot(t, p1.T) + np.dot(to1, po1.T)
         X2 = np.dot(t, p2.T) + np.dot(to2, po2.T)
         X3 = np.dot(t, p3.T) + np.dot(to3, po3.T)
-#        Xte1 = np.dot(t, p1.T)
-#        Xte2 = np.dot(t, p2.T)
-#        Xte3 = np.dot(t, p3.T)
+        # Xte1 = np.dot(t, p1.T)
+        # Xte2 = np.dot(t, p2.T)
+        # Xte3 = np.dot(t, p3.T)
 
         predComp = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
         precomputedW = None
@@ -75,15 +75,15 @@ class TestOnPLS(tests.TestCase):
 
         Xhat, That = onpls.predict([X1, X2, X3], [2], return_scores=True)
         onpls_score = onpls.score([X1, X2, X3])
-        assert(onpls_score > 0.999)
+        assert (onpls_score > 0.999)
 
-#        Xhat, That = onpls.predict([Xte1, Xte2, Xte3], [2],
-#                                   return_scores=True)
+        # Xhat, That = onpls.predict([Xte1, Xte2, Xte3], [2],
+        #                           return_scores=True)
 
         if np.dot(t.T, That[0]) < 0.0:
             That[0] = -That[0]
-#        print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
-        assert(np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 5e-13)
+        # print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
+        assert (np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 5e-13)
 
         # nPLS model:
         npls = estimators.nPLS(predComp, precomputed_A=None, numReps=1,
@@ -91,18 +91,18 @@ class TestOnPLS(tests.TestCase):
         npls.fit([X1, X2, X3])
 
         Xhat, That = npls.predict([X1, X2, X3], [2], return_scores=True)
-#        Xhat, That = npls.predict([Xte1, Xte2, Xte3], [2],
-#                                  return_scores=True)
+        # Xhat, That = npls.predict([Xte1, Xte2, Xte3], [2],
+        #                           return_scores=True)
 
         if np.dot(t.T, That[0]) < 0.0:
             That[0] = -That[0]
-#        print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
-        assert(np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 1.5)
+        # print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
+        assert (np.linalg.norm(Xhat[0] - np.dot(t, p3.T)) < 1.5)
         npls_score = npls.score([X1, X2, X3])
-#        print abs(npls_score - 0.37736)
-        assert(abs(npls_score - 0.37736) < 5e-6)
+        # print abs(npls_score - 0.37736)
+        assert (abs(npls_score - 0.37736) < 5e-6)
 
-        assert(onpls_score > npls_score)
+        assert (onpls_score > npls_score)
 
     def test_comparison_to_nPLS_2comps(self):
         np.random.seed(42)
@@ -137,16 +137,16 @@ class TestOnPLS(tests.TestCase):
                   - utils.project(to3, to2)
         to3 = to3 / np.linalg.norm(to3)
 
-        assert(np.abs(np.dot(t1.T, t2)) < 5e-15)
-        assert(np.abs(np.dot(t1.T, to1)) < 5e-15)
-        assert(np.abs(np.dot(t1.T, to2)) < 5e-15)
-        assert(np.abs(np.dot(t1.T, to3)) < 5e-15)
-        assert(np.abs(np.dot(t2.T, to1)) < 5e-15)
-        assert(np.abs(np.dot(t2.T, to2)) < 5e-15)
-        assert(np.abs(np.dot(t2.T, to3)) < 5e-15)
-        assert(np.abs(np.dot(to1.T, to2)) < 5e-15)
-        assert(np.abs(np.dot(to1.T, to3)) < 5e-15)
-        assert(np.abs(np.dot(to2.T, to3)) < 5e-15)
+        assert (np.abs(np.dot(t1.T, t2)) < 5e-15)
+        assert (np.abs(np.dot(t1.T, to1)) < 5e-15)
+        assert (np.abs(np.dot(t1.T, to2)) < 5e-15)
+        assert (np.abs(np.dot(t1.T, to3)) < 5e-15)
+        assert (np.abs(np.dot(t2.T, to1)) < 5e-15)
+        assert (np.abs(np.dot(t2.T, to2)) < 5e-15)
+        assert (np.abs(np.dot(t2.T, to3)) < 5e-15)
+        assert (np.abs(np.dot(to1.T, to2)) < 5e-15)
+        assert (np.abs(np.dot(to1.T, to3)) < 5e-15)
+        assert (np.abs(np.dot(to2.T, to3)) < 5e-15)
 
         p11 = np.sort(np.random.randn(p_1, 1), axis=0)
         p12 = np.sort(np.random.randn(p_2, 1), axis=0)
@@ -161,9 +161,9 @@ class TestOnPLS(tests.TestCase):
         X1 = np.dot(t1, p11.T) + np.dot(t2, p21.T) + np.dot(to1, po1.T)
         X2 = np.dot(t1, p12.T) + np.dot(t2, p22.T) + np.dot(to2, po2.T)
         X3 = np.dot(t1, p13.T) + np.dot(t2, p23.T) + np.dot(to3, po3.T)
-#        Xte1 = np.dot(t, p1.T)
-#        Xte2 = np.dot(t, p2.T)
-#        Xte3 = np.dot(t, p3.T)
+        # Xte1 = np.dot(t, p1.T)
+        # Xte2 = np.dot(t, p2.T)
+        # Xte3 = np.dot(t, p3.T)
 
         pred_comp = [[0, 2, 2], [2, 0, 2], [2, 2, 0]]
         precomputed_W = None
@@ -177,15 +177,15 @@ class TestOnPLS(tests.TestCase):
 
         Xhat, That = onpls.predict([X1, X2, X3], [2], return_scores=True)
         onpls_score = onpls.score([X1, X2, X3])
-        assert(onpls_score > 0.85)
+        assert (onpls_score > 0.85)
 
-#        Xhat, That = onpls.predict([Xte1, Xte2, Xte3], [2],
-#                                   return_scores=True)
+        # Xhat, That = onpls.predict([Xte1, Xte2, Xte3], [2],
+        #                           return_scores=True)
 
         if np.dot(t1.T, That[0]) < 0.0:
             That[0] = -That[0]
-#        print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
-#        assert(np.linalg.norm(Xhat[0] - np.dot(t1, p13.T)) < 5e-13)
+        # print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
+        # assert(np.linalg.norm(Xhat[0] - np.dot(t1, p13.T)) < 5e-13)
 
         # nPLS model:
         npls = estimators.nPLS(pred_comp, K=2, precomputed_A=None, numReps=1,
@@ -193,20 +193,20 @@ class TestOnPLS(tests.TestCase):
         npls.fit([X1, X2, X3])
 
         Xhat, That = npls.predict([X1, X2, X3], [2], return_scores=True)
-#        Xhat, That = npls.predict([Xte1, Xte2, Xte3], [2],
-#                                  return_scores=True)
+        # Xhat, That = npls.predict([Xte1, Xte2, Xte3], [2],
+        #                           return_scores=True)
 
-        if np.asscalar(np.dot(t1.T, That[0][:, [0]])) < 0.0:
+        if np.array(np.dot(t1.T, That[0][:, [0]])).item() < 0.0:
             That[0][:, 0] = -That[0][:, 0]
-        if np.asscalar(np.dot(t1.T, That[0][:, [1]])) < 0.0:
+        if np.array(np.dot(t1.T, That[0][:, [1]])).item() < 0.0:
             That[0][:, 1] = -That[0][:, 1]
-#        print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
-        assert(np.linalg.norm(Xhat[0] - np.dot(t1, p13.T)) < 3.3)
+        # print np.linalg.norm(Xhat[0] - np.dot(t, p3.T))
+        assert (np.linalg.norm(Xhat[0] - np.dot(t1, p13.T)) < 3.3)
         npls_score = npls.score([X1, X2, X3])
-#        print(abs(npls_score - 0.534009))
-        assert(abs(npls_score - 0.534009) < 5e-7)
+        # print(abs(npls_score - 0.534009))
+        assert (abs(npls_score - 0.534009) < 5e-7)
 
-        assert(onpls_score > npls_score)
+        assert (onpls_score > npls_score)
 
 
 if __name__ == "__main__":

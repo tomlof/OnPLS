@@ -1,33 +1,24 @@
 OnPLS
 =====
 
-OnPLS: Orthogonal Projections to Latent Structures in Multiblock and Path Model Data Analysis
+OnPLS: Orthogonal Projections to Latent Structures in Multiblock and Path Model
+Data Analysis.
 
-OnPLS is a Python package for multiblock data analysis with prefiltering of unique and locally joint variation.
+OnPLS is a Python package for multiblock data analysis with prefiltering of
+unique and locally joint variation.
 
 
 Installation
 ------------
 
-The reference environment for OnPLS is Ubuntu 14.04 LTS with Python 2.7.6 or Python 3.4.3 and Numpy 1.8.2.
+The reference environment for OnPLS is Ubuntu 20.04 LTS with Python 3.10 and
+Numpy 1.26. It was originally made to also run with Python 2.7, but has not
+recently been tested with Python 2.7.
 
-Unless you already have Numpy installed, you need to install it:
-```
-$ sudo apt-get install python-numpy
-```
-or
-```
-$ sudo apt-get install python3-numpy
-```
+We recommend that you use a Python package manager, such as Anaconda or pip.
 
-In order to run the tests, you may also need to install Nose:
-```
-$ sudo apt-get install python-nose
-```
-or
-```
-$ sudo apt-get install python3-nose
-```
+The main requirement is Numpy. To run the tests, you also need Nose.
+
 
 **Downloading the latest development version**
 
@@ -43,9 +34,11 @@ Add OnPLS to your Python path:
 $ export $PYTHONPATH=$PYTHONPATH:/directory/to/OnPLS
 ```
 
-Stable reseases with setup scripts will be included in future versions.
+Stable reseases with setup scripts may be included in future versions.
 
 You are now ready to use your fresh installation of OnPLS!
+
+Contributions are very welcome!
 
 
 Quick start
